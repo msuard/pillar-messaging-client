@@ -6,7 +6,7 @@ const ab2str = require('arraybuffer-to-string');
 
 getJSON = function(){
     console.log('GET STORE')
-    var json = require('../../store.json');
+    var json = require('./store.json');
     //var jsomn = JSON.parse(json);
     return(json)
 }

@@ -19,7 +19,7 @@ appendObject = function(key,value){
     console.log('AFTER')
     console.log(json)
     //jsonfile.writeFile('./config.json', json, {flag: 'a'}, function (err) {
-    jsonfile.writeFileSync('./Services/store.json', json, function (err) {
+    jsonfile.writeFileSync('./src/Services/store.json', json, function (err) {
         console.error(err)
       })
 }
@@ -131,7 +131,7 @@ removeKey = function(key){
       if (trusted === undefined) {
         return Promise.resolve(true);
       }
-      return Promise.resolve(util.toString(identityKey) === util.toString(trusted));
+      return Promise.resolve(identityKey.toString() === trusted.toString());
     },
     loadIdentityKey: function(identifier) {
         console.log('LOAD IDENTITY KEY')

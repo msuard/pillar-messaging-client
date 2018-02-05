@@ -39,6 +39,7 @@ module.exports.sendMessage = sendMessage
 
 requestSendMessage = function(request,options){
     console.log('HTTP PUT REQUEST...')
+    console.log(options.json)
     newMessagePromise = new Promise(function(resolve,reject){
         try{
             request(options, function(error,response,body) {
