@@ -4,54 +4,56 @@ const SignalProtocolStore = require('./SignalProtocolStore.js')
 const ab2str = require('arraybuffer-to-string');
 
 
-getJSON = function(){
+getJSON = function(storeNb){
     console.log('GET STORE')
-    var json = require('./store.json');
+    var json = require('./store_'+storeNb+'.json');
     //var jsomn = JSON.parse(json);
+    console.log(json)
     return(json)
 }
 
-buildSession = function(preKeyBundle){
+buildSession = function(preKeyBundle,store){
     var sessionPromise = new Promise(function(resolve,reject){
-
+        console.log(store)
         var recipientId = preKeyBundle.devices[0].registrationId.toString() //???
         var deviceId = preKeyBundle.devices[0].deviceId.toString() //
+        //var json  = getJSON(storeNb)
 
-
-        var json  = getJSON()
-
-        console.log('SESSION STORE')
-        console.log(JSON.stringify(json))
-
+        //console.log('SESSION STORE')
+        //console.log(JSON.stringify(json))
 
         var address = new signal.SignalProtocolAddress(recipientId, deviceId);
-        console.log(address)
-        console.log('ADDRESS TO STRING')
-        console.log(address.toString())
-        var store  = new SignalProtocolStore.SignalProtocolStore()
-        console.log('STORE OBJECT')
-        console.log(store)
+        //console.log(address)
+        //console.log('ADDRESS TO STRING')
+        //console.log(address.toString())
+        //var store  = new SignalProtocolStore.SignalProtocolStore(storeNb)
+        //console.log('STORE OBJECT')
+        //console.log(store)
         // Instantiate a SessionBuilder for a remote recipientId + deviceId tuple.
+        //console.log('SESSION BUILDER')
+        console.log()
         var sessionBuilder = new signal.SessionBuilder(store, address);
         
         // Process a prekey fetched from the server. Returns a promise that resolves
         // once a session is created and saved in the store, or rejects if the
         // identityKey differs from a previously seen identity for this address.
-        console.log('DEVICE')
-        console.log(preKeyBundle.devices[0])
-        console.log(ab2str(preKeyBundle.devices[0].preKey.publicKey,'hex'))
-
+        //console.log('DEVICE')
+        //console.log(preKeyBundle.devices[0])
+        //console.log(ab2str(preKeyBundle.devices[0].preKey.publicKey,'hex'))
+        console.log('PROCESS PRE KEY')
+        
         var promise = sessionBuilder.processPreKey(preKeyBundle.devices[0]);
         
         promise.then(function onsuccess() {
             // encrypt messages
-            console.log('ENCRYPT')
+            console.log('SESSION BUILT SUCCESSFULLY')
             resolve({'address' : address, 'store' : store})
         });
         
         promise.catch(function onerror(error) {
             // handle identity key conflict
-            console.log('STORE ERROR')
+            console.log('SESSIONS STORE ERROR')
+            console.log(error)
             reject(error)
         });
     })

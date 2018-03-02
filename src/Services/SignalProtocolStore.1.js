@@ -3,10 +3,83 @@ var jsonfile = require('jsonfile')
 const str2ab =require('string-to-arraybuffer')
 const signal = require('signal-protocol')
 
+appendObject = function(key,value,storeNb){
+    console.log('PUT STORE')
+    try{
+        var json=require('./store_'+storeNb+'.json');
+        //console.log('BEFORE')
+        //console.log(json)
+    }
+    catch(e){
+        var json={}
+        console.log('WARNING: '+e)
+    }
+    //var json={}
+    json[key]=value
+    //console.log('AFTER')
+    //console.log(json)
+    //jsonfile.writeFile('./config.json', json, {flag: 'a'}, function (err) {
+    jsonfile.writeFileSync('./src/Services/store_'+storeNb+'.json', json, function (err) {
+        console.error(err)
+      })
+}
+
+getJSON = function(storeNb){
+    console.log('GET STORE')
+    var json = require('./store_'+storeNb+'.json');
+    //var jsomn = JSON.parse(json);
+    return(json)
+}
+
+getJSONKey = function(key,defaultValue,storeNb){
+    console.log('GET STORE KEY')
+    console.log(key)
+    try{
+
+        var json = require('./store_'+storeNb+'.json');
+        //console.log(key)
+        //console.log(json)
+        
+
+        if(key=='identityKey' || key=='25519KeysignedKey0'){
+            var jsonKeyAB = {
+                pubKey: str2ab(json[key].pubKey),
+                privKey: str2ab(json[key].privKey)
+            }
+            console.log('PUBKEY')
+            console.log(jsonKeyAB.pubKey)
+            //console.log(new Uint8Array(jsonKeyAB.pubKey))
+            console.log('PRIVKEY')
+            console.log(jsonKeyAB.privKey)
+            return(jsonKeyAB)
+        }
+        else{
+          console.log('JSON[KEY]')
+          console.log(json[key])
+            return(json[key])
+        }
+        
+    }
+    catch(e){return(defaultValue)}
+    
+}
+
+removeKey = function(key,storeNb){
+    var json = require('./store_'+storeNb+'.json');
+    //var config = JSON.parse(configFile);
+    delete json[key]; 
+    jsonfile.writeFile('./Services/store_'+storeNb+'.json', json, function (err) {
+        console.error(err)
+      })
+}
 
 
+//function SignalProtocolStore() {
+//    this.store = {};
+//  }
 
-var SignalProtocolStore = (function(storeNb){
+ 
+  var SignalProtocolStore = (function(storeNb){
 
   
   //SignalProtocolStore.prototype = {
@@ -20,40 +93,39 @@ var SignalProtocolStore = (function(storeNb){
   
     getIdentityKeyPair: function() {
         console.log('GET IDENTITY KEY PAIR')
-        console.log(this.get('identityKey'))
-        let identityKey = this.get('identityKey')
-      return Promise.resolve({pubKey : str2ab(identityKey.pubKey), privKey : str2ab(identityKey.privKey)});
+      return Promise.resolve(this.get('identityKey'));
     },
     getLocalRegistrationId: function() {
-      console.log('\n')
-      console.log(this.store)
-      console.log('\n')
-      console.log(this.get('identityKey'))
       return Promise.resolve(this.get('registrationId'));
     },
     put: function(key,value) {
       if (key === undefined || value === undefined || key === null || value === null)
         throw new Error("Tried to store undefined/null");
       this.store[key] = value;
+      appendObject(key,value,storeNb);
     },
     get: function(key, defaultValue) {
         if (key === null || key === undefined)
             throw new Error("Tried to get value for undefined/null key");
-        if (key in this.store) {
-            return this.store[key];
-        } else {
-            return defaultValue;
-      }
+        //if (key in this.store) {
+            //return this.store[key];
+            console.log('GET KEY')
+            console.log(getJSONKey(key,defaultValue,storeNb))
+            return getJSONKey(key,defaultValue,storeNb)
+       // } else {
+       //     return defaultValue;
+      //}
     },
     remove: function(key) {
       if (key === null || key === undefined)
         throw new Error("Tried to remove value for undefined/null key");
       delete this.store[key];
+      removeKey(key,storeNb)
     },
   
     isTrustedIdentity: function(identifier, identityKey, direction) {
 
-        
+        console.log('IS TRUSTED IDENTITY')
       if (identifier === null || identifier === undefined) {
         throw new Error("tried to check identity key for undefined/null key");
       }
@@ -64,7 +136,6 @@ var SignalProtocolStore = (function(storeNb){
       if (trusted === undefined) {
         return Promise.resolve(true);
       }
-      console.log('IS TRUSTED IDENTITY')
       return Promise.resolve(identityKey.toString() === trusted.toString());
     },
     loadIdentityKey: function(identifier) {
@@ -127,9 +198,6 @@ var SignalProtocolStore = (function(storeNb){
   
     loadSession: function(identifier) {
         console.log('LOAD SESSION')
-        console.log(this.store)
-        console.log(identifier)
-        console.log(this.get('session' + identifier))
       return Promise.resolve(this.get('session' + identifier));
     },
     storeSession: function(identifier, record) {
@@ -142,6 +210,7 @@ var SignalProtocolStore = (function(storeNb){
       for (var id in this.store) {
         if (id.startsWith('session' + identifier)) {
           delete this.store[id];
+          removeKey(key,storeNb)
         }
       }
       return Promise.resolve();

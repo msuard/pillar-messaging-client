@@ -5,12 +5,13 @@ const crypto = require("crypto");
 const signal = require('signal-protocol')
 const auth = require('./authentication.js')
 const SignalProtocolStore = require('./SignalProtocolStore.js')
-var store  = new SignalProtocolStore.SignalProtocolStore()
+
 
 createNewAccount = function(username,password){
     console.log('CREATING NEW ACCOUNT...\n')
     newAccountPromise = new Promise(function(resolve,reject){
         try{
+            var store  = new SignalProtocolStore.SignalProtocolStore()
             auth.getTimestamp().then(function(tmstmp){
                 let authCred = auth.generateCredentials(username,password)
                 let signatureAddressObject = auth.generateSignatureAddress()
@@ -25,7 +26,7 @@ createNewAccount = function(username,password){
                 let options = auth.generatePUTOptions(url,path,port,method,headers,json)
                 requestNewAccount(request,options).then(function(){
                     console.log('NEW ACCOUNT CREATED: USERNAME = '+username+', PASSWORD = '+password+'\n')
-                    resolve()
+                    resolve(store)
                 })
             })
         }
@@ -52,7 +53,7 @@ requestNewAccount = function(request,options){
     return(newAccountPromise)
 }
 
-generateRegistrationID=function(){
+generateRegistrationID=function(store){
     console.log('GENERATING REGISTRATION ID...')
     let registrationID = signal.KeyHelper.generateRegistrationId();
     store.put('registrationId', registrationID);
