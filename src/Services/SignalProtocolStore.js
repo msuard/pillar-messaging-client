@@ -22,7 +22,8 @@ var SignalProtocolStore = (function(storeNb){
         console.log('GET IDENTITY KEY PAIR')
         console.log(this.get('identityKey'))
         let identityKey = this.get('identityKey')
-      return Promise.resolve({pubKey : str2ab(identityKey.pubKey), privKey : str2ab(identityKey.privKey)});
+      //return Promise.resolve({pubKey : str2ab(identityKey.pubKey), privKey : str2ab(identityKey.privKey)});
+      return Promise.resolve({pubKey : identityKey.pubKey, privKey : identityKey.privKey});
     },
     getLocalRegistrationId: function() {
       console.log('\n')
@@ -133,6 +134,7 @@ var SignalProtocolStore = (function(storeNb){
       return Promise.resolve(this.get('session' + identifier));
     },
     storeSession: function(identifier, record) {
+      console.log('STORE SESSION')
       return Promise.resolve(this.put('session' + identifier, record));
     },
     removeSession: function(identifier) {

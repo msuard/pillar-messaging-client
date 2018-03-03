@@ -5,34 +5,17 @@ let keys = require('./Services/keys.js')
 let messages = require('./Services/messages.js')
 let sessions = require('./Services/sessions.js')
 const encrypt = require('./Services/encrypt.js')
+const base64 = require('base-64');
+const str2ab =require('string-to-arraybuffer')
+const ab2str = require('arraybuffer-to-string');
+const atob =require('atob')
 
-var fs = require('fs');
-
-let wipeStore = function(storeNb){
-    fs.stat('./src/Services/store_'+storeNb+'.json', function (err, stats) {
-        //console.log(stats);//here we got all information of file in stats variable
-     
-        if (err) {
-            return console.error(err);
-        }
-     
-       fs.unlink('./src/Services/store_'+storeNb+'.json',function(err){
-             if(err) return console.log(err);
-             console.log('JSON store file deleted successfully');
-        });  
-     });
-}
-
-//wipeStore(1)
-//wipeStore(2)
-
-
-let username = "fcm-app-25"
+let username = "fcm-app-73"
 let password = "pwd"
 let gcmId1='eF1qD84g0H4:APA91bF4k2lZkzOnYIn0U1_Oh1IDxZ4H6EXAjRRoGAQsbrBS5OjdxP37FLrfjW-VcSnr9gZAh4czB5oVR4xlcOtWkxhHM5y4De4qVZcnEiopS9tuOWd69dQLZ-BFruyRBVs0Ijx8XfoM'
 let gcmId2='cntJhnwKF6E:APA91bGZU6kgH_lKDHApUEQrc3fm3byjs7cdHwGIXA3602-o2BsG9lm3U-JaHUR6iSvo9zwNdSpmTychMsex5jaJG8bKsLrR2iQpSfk0rK0hQrzyqBal6b5NFd9COkCjVDl-hyrfsG_v'
 
-let destination = "fcm-app-26"
+let destination = "fcm-app-74"
 let destDevID = 1
 
 
@@ -65,7 +48,7 @@ accounts.createNewAccount(username,password)
                             console.log('SESSION OBJECT')
                             console.log(sessionObject1)
                             let content='helloooooooooooooooooo'
-                            let body='yoyoyoooo'
+                            let body='newmessagebodytest'
                             console.log('ENCRYPT MESSAGE \n')
                             encrypt.encryptMessage(body,sessionObject1.store,sessionObject1.address)
                             .then(function(ciphertext){
@@ -73,12 +56,13 @@ accounts.createNewAccount(username,password)
                                 console.log(ciphertext)
                                 console.log(ciphertext.type)
                                 console.log('CYPHERTEXT BODY')
-                                console.log(typeof(ciphertext.body))
+                                console.log(ciphertext.body)
+                                let encryptedMSG = ciphertext.body
                                 let destRegID = sessionObject1.address.getName()
-                                content = 'ciphertext message'//
-                                body = ciphertext.body//JSON.stringify(ciphertext)//'message body'//
-                                let type = 0
-                                let msgdestination=destination
+                                content = base64.encode('ciphertext message')
+                                body = base64.encode(ciphertext.body);
+                                let type = 1
+                                let msgdestination = destination
 
                                 console.log('SEND MESSAGE \n')
                                 messages.sendMessage(username,password,destRegID,destDevID,content,body,msgdestination,type)
@@ -90,9 +74,9 @@ accounts.createNewAccount(username,password)
                                         console.log('PENDING MESSAGES ARRAY :\n')
                                         console.log (messagesArray)
                                         console.log (messagesArray.length)
-                                        console.log(messagesArray[messagesArray.length-1].message)
-                                        console.log(messagesArray[messagesArray.length-1].content)
-
+                                        console.log(base64.decode(messagesArray[messagesArray.length-1].message))
+                                        console.log(base64.decode(messagesArray[messagesArray.length-1].content))
+                                        let base64EncryptedMessage = messagesArray[messagesArray.length-1].message
                                         console.log('GET RECIPIENT KEYS 2\n')
                                         keys.getRecipientKeys(destination,password,username,destDevID)
                                         .then(function(preKeyBundle2){
@@ -100,7 +84,15 @@ accounts.createNewAccount(username,password)
                                             sessions.buildSession(preKeyBundle2,store2)
                                             .then(function(sessionObject2){
                                                 console.log('DECRYPT MESSAGE')
-                                                    encrypt.decryptMessage(destRegID,destDevID,sessionObject2.store,sessionObject2.address,ciphertext)
+                                                console.log('ENCRYPTED MSG = \n')
+                                                console.log(encryptedMSG)
+                                                console.log('\n')
+                                                //let ABciphertext=str2ab(ciphertext.body,'base64')
+                                                console.log(ciphertext.body)
+                                                let base64ciphertext = base64.encode(JSON.stringify(ciphertext))
+                                                console.log(base64ciphertext)
+                                                
+                                                    encrypt.decryptMessage(destRegID,destDevID,sessionObject2.store,sessionObject2.address,base64ciphertext)
                                                     .then(function(plaintext){
                                                         console.log(plaintext)
                                                     })

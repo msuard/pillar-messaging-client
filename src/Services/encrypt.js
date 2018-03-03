@@ -1,11 +1,37 @@
 const signal = require('signal-protocol')
 const ab2str = require('arraybuffer-to-string');
 const str2ab =require('string-to-arraybuffer')
+const base64 = require('base-64');
+
+encryptDecrypt = function(){
+    var signalstream = require('signal-stream')
+    var signal = require('signal-protocol')
+    var h = require('signal-stream/test/helpers')(signal)
+    
+    h.bobAliceSessionCiphers()
+    .then(([aliceCipher, bobCipher]) => {
+        let alice = signalstream(aliceCipher)
+        let bob = signalstream(bobCipher)
+        require('http')
+        .get({
+            hostname:'info.cern.ch',
+            path: '/hypertext/WWW/TheProject.html',
+        }, res => {
+            res
+            .pipe(alice.encrypt)
+            .pipe(bob.decrypt)
+            .pipe(bob.encrypt)
+            .pipe(alice.decrypt)
+            .on('data', d =>
+                console.log(d.toString()))
+        })
+    })
+}
 
 encryptMessage = function(plaintext,store,address){
     var cipherPromise = new Promise(function(resolve,reject){
         try{
-            var base64Encoded = plaintext.toString('base64')
+            var base64AB = str2ab(plaintext,'base64')
             var sessionCipher = new signal.SessionCipher(store, address);
 
             sessionCipher.encrypt(plaintext).then(function(ciphertext) {
@@ -13,6 +39,7 @@ encryptMessage = function(plaintext,store,address){
                 console.log('CIPHERTEXT')
                 console.log(ciphertext)
                 //handle(ciphertext.type, ciphertext.body);
+                
                 resolve(ciphertext)
             });
         }
@@ -43,7 +70,8 @@ decryptMessage = function(recipientId,deviceId,store,address,ciphertext){
 */
             // Decrypt a normal message using an existing session
             var sessionCipher = new signal.SessionCipher(store, address);
-            sessionCipher.decryptWhisperMessage(ciphertext.body).then(function(plaintext) {
+            sessionCipher.decryptWhisperMessage(ciphertext,'binary').then(function(plaintext) {
+            //sessionCipher.decryptPreKeyWhisperMessage(ciphertext,'binary').then(function(plaintext) {
                 // handle plaintext ArrayBuffer
                 resolve(plaintext)
             });
