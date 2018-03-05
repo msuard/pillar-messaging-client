@@ -27,8 +27,8 @@ getRecipientKeys = function(username,password,destination,deviceID){
                 //console.log('PARSED')
                 //console.log(preKeyBundle)
                 var json = recoverPreKeysBundleJSON(preKeyBundle)
-                //console.log('RECOVERED')
-                //console.log(json)
+                console.log('RECOVERED')
+                console.log(json)
                 //console.log(json.devices[0].signedPreKey)
                 //console.log(json.devices[0].preKey)
                 resolve(json)
@@ -40,7 +40,7 @@ getRecipientKeys = function(username,password,destination,deviceID){
 }
 module.exports.getRecipientKeys = getRecipientKeys
 
-registerKeys = function(username,password,store1){
+registerKeys = function(username,password,store){
     console.log('REGISTERING MESSAGING KEYS...\n')
     registerKeysPromise = new Promise(function(resolve,reject){
         try{
@@ -50,8 +50,10 @@ registerKeys = function(username,password,store1){
                 let signatureAddressObject = auth.generateSignatureAddress()
                 let headers = auth.generatePUTHeaders(authCred,tmstmp,signatureAddressObject.signature,signatureAddressObject.address)
                 //var store  = new SignalProtocolStore.SignalProtocolStore(storeNb)
-                generateKeysJSON(store1)
+                generateKeysJSON(store)
+                //generatePreKeyBundle(store,1,1)
                 .then(function(json){
+                    console.log(json)
                     let url = 'https://pillar-chat-service-auth.herokuapp.com'
                     let path = '/v2/keys'
                     let method = 'PUT'
@@ -59,7 +61,7 @@ registerKeys = function(username,password,store1){
                     let options = auth.generatePUTOptions(url,path,port,method,headers,json)
                     requestRegisterKeys(request,options).then(function(){
                         console.log('DONE\n')
-                        resolve(store1)
+                        resolve(store)
                     })
                 })
             })
@@ -92,31 +94,36 @@ generateKeysJSON = function(store){
     jsonPromise = new Promise(function(resolve,reject){
         try{
 
-            
+            return Promise.all([
+                store.getIdentityKeyPair(),
+                store.getLocalRegistrationId()
+              ]).then(function(result) {
+                var identityKeyPair = result[0];
+                var registrationId = result[1];
 
             var keyId
-            
+/*         
             signal.KeyHelper.generateIdentityKeyPair().then(function(identityKeyPair) {
                 // keyPair -> { pubKey: ArrayBuffer, privKey: ArrayBuffer }
                 // Store identityKeyPair somewhere durable and safe.
                 //console.log('IDENTITYKEYPAIR')
                 //console.log(identityKeyPair)
                 identityKeyPairStore = {
-                    pubKey : ab2str(identityKeyPair.pubKey,'base64'),
-                    privKey : ab2str(identityKeyPair.privKey,'base64'),
+                    pubKey : identityKeyPair.pubKey,
+                    privKey : identityKeyPair.privKey,
                 }
                 //console.log(identityKeyPairStore)
                 store.put('identityKey',identityKeyPairStore);
-
+*/
                 //console.log('\nID KEY PAIR\n:')
                 //console.log(identityKeyPair)
                 //console.log('\n')
 
                 signal.KeyHelper.generatePreKey(16777215).then(function(lastResortKey){ //Generate lastResortKey with unique keyID (don't change)
-
-                    genPreKeysArray([],0)
+                    console.log(store)
+                    genPreKeysArray([],0,store)
                     .then(function(preKeysArray){
-
+                        
                         let keyId=0 //Any integer
                     
                         signal.KeyHelper.generateSignedPreKey(identityKeyPair, keyId).then(function(signedPreKey) {
@@ -125,8 +132,8 @@ generateKeysJSON = function(store){
                             signedPreKeyStore = {
                                 keyId : signedPreKey.keyId,
                                 keyPair : {
-                                    pubKey : ab2str(signedPreKey.keyPair.pubKey,'base64'),
-                                    privKey : ab2str(signedPreKey.keyPair.privKey,'base64')
+                                    pubKey : signedPreKey.keyPair.pubKey,
+                                    privKey : signedPreKey.keyPair.privKey,
                                 }
                             }
                             //console.log(signedPreKeyStore)
@@ -139,6 +146,7 @@ generateKeysJSON = function(store){
                             
                             var json = {
                                 "identityKey": ab2str(identityKeyPair.pubKey, 'base64'),
+                                //"registrationId" : registrationId,
                                 "lastResortKey": {
                                     "keyId": 16777215,
                                     "publicKey": ab2str(lastResortKey.keyPair.pubKey, 'base64')
@@ -161,8 +169,49 @@ generateKeysJSON = function(store){
     return(jsonPromise)
 }
 
-genPreKeysArray=function(preKeysArray,index){
+function generatePreKeyBundle(store, preKeyId, signedPreKeyId) {
+    jsonPromise = new Promise(function(resolve,reject){
+    return Promise.all([
+      store.getIdentityKeyPair(),
+      store.getLocalRegistrationId()
+    ]).then(function(result) {
+      var identity = result[0];
+      //var registrationId = result[1];
+  
+      return Promise.all([
+        signal.KeyHelper.generatePreKey(preKeyId),
+        signal.KeyHelper.generateSignedPreKey(identity, signedPreKeyId),
+      ]).then(function(keys) {
+        var preKey = keys[0];
+        var signedPreKey = keys[1];
+  
+        store.storePreKey(preKeyId, preKey.keyPair);
+        store.storeSignedPreKey(signedPreKeyId, signedPreKey.keyPair);
+        
+        resolve( {
+          "identityKey" : ab2str(identity.pubKey,'base64'),
+          //"registrationId" : registrationId,
+          "preKey" :  {
+            "keyId"     : preKeyId,
+            "publicKey" : ab2str(preKey.keyPair.pubKey,'base64'),
+          },
+          "signedPreKey" : {
+            "keyId"     : signedPreKeyId,
+            "publicKey" : ab2str(signedPreKey.keyPair.pubKey,'base64'),
+            "signature" : ab2str(signedPreKey.signature,'base64'),
+          }
+        });
+      });
+    });
+})
+return(jsonPromise)
+  }
+
+
+genPreKeysArray=function(preKeysArray,index,store){
+    
     var preKeysArrayPromise=new Promise (function(resolve, reject){
+        
         if (index==10){
             resolve(preKeysArray)
         }
@@ -170,9 +219,12 @@ genPreKeysArray=function(preKeysArray,index){
             
             signal.KeyHelper.generatePreKey(index)
             .then(function(preKey){
+                console.log('STORE PRE KEY')
+                console.log(store)
+                store.storePreKey(preKey.keyId, preKey.keyPair);
                 preKeysArray.push({"keyId": preKey.keyId.toString(), "publicKey": '0x05'+ab2str(preKey.keyPair.pubKey, 'base64'), "identityKey": ab2str(preKey.keyPair.privKey, 'base64')})
                 //console.log(preKeysArray[-1].publicKey.length)
-                resolve(genPreKeysArray(preKeysArray,index+1))
+                resolve(genPreKeysArray(preKeysArray,index+1,store))
             })
         }
     
@@ -189,10 +241,12 @@ recoverPreKeysBundleJSON = function(preKeyBundle){
 
     let devicesArray=[]
     preKeyBundle.devices.forEach(function(item){
+        console.log('PREKEY BUNDLE ITEM')
+        console.log(item)
         devicesArray.push(
             {   
                 identityKey: str2ab(preKeyBundle.identityKey),
-                deviceId: item.deviceId,
+                //deviceId: item.deviceId,
                 registrationId: item.registrationId,
                 signedPreKey: {
                     keyId: item.signedPreKey.keyId,
@@ -207,7 +261,7 @@ recoverPreKeysBundleJSON = function(preKeyBundle){
         )
     })
 
-    var json = { 
+    var json = {
         identityKey: str2ab(preKeyBundle.identityKey),
         devices:  devicesArray
         }

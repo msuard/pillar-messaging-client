@@ -24,8 +24,8 @@ buildSession = function(preKeyBundle,store){
 
         var address = new signal.SignalProtocolAddress(recipientId, deviceId);
         //console.log(address)
-        //console.log('ADDRESS TO STRING')
-        //console.log(address.toString())
+        console.log('ADDRESS TO STRING')
+        console.log(address.toString())
         //var store  = new SignalProtocolStore.SignalProtocolStore(storeNb)
         //console.log('STORE OBJECT')
         //console.log(store)

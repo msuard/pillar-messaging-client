@@ -33,6 +33,7 @@ function generateIdentity(store) {
     });
   }
   
+  
   function generatePreKeyBundle(store, preKeyId, signedPreKeyId) {
     return Promise.all([
       store.getIdentityKeyPair(),
@@ -104,13 +105,17 @@ return Promise.all([
     console.log(result)
     ALICE_ADDRESS = new signal.SignalProtocolAddress(result[0], 1); 
     BOB_ADDRESS   = new signal.SignalProtocolAddress(result[1], 1);
+    console.log('ADDRESS')
+    console.log(ALICE_ADDRESS)
     return generatePreKeyBundle(bobStore, bobPreKeyId, bobSignedKeyId); //GENERATE BOB PRE KEY BUNDLE TO SEND TO ALICE
 }).then(function(genPreKeyBundle) {
 
     preKeyBundle = genPreKeyBundle
     console.log('GENERATED PREKEY BUNDLE')
-    
+    console.log(BOB_ADDRESS)
     var builder = new signal.SessionBuilder(aliceStore, BOB_ADDRESS);
+    console.log('preKeyBundle')
+    console.log(preKeyBundle)
     return builder.processPreKey(preKeyBundle) //REGISTER BOB's PREKEY BUNDLE INTO ALICE SESSION STORE
 }).then(function () {
 /*
@@ -120,7 +125,9 @@ return Promise.all([
 }).then(function () {
 */
     console.log(aliceStore)
+    console.log(BOB_ADDRESS)
     console.log(bobStore)
+    console.log(ALICE_ADDRESS)
     console.log('PROCESSED PREKEY BUNDLE')
     var aliceSessionCipher = new signal.SessionCipher(aliceStore, BOB_ADDRESS);
     var bobSessionCipher = new signal.SessionCipher(bobStore, ALICE_ADDRESS);
@@ -129,11 +136,10 @@ return Promise.all([
     //let bob = signalstream(bobSessionCipher)
    //console.log('\n')
     //console.log(alice.encrypt)
-    msg='coucou'
+    msg='first encrypted message bitchezz'
     aliceSessionCipher.encrypt(msg)
     .then(function(ciphertext){
         console.log(ciphertext)
-     
         console.log('DECRYPTOR')
             decryptor(bobSessionCipher)(ciphertext)
             .then(function(plaintext){

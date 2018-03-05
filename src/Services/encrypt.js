@@ -50,7 +50,7 @@ encryptMessage = function(plaintext,store,address){
 
 module.exports.encryptMessage = encryptMessage
 
-decryptMessage = function(recipientId,deviceId,store,address,ciphertext){
+decryptMessage = function(store,address,ciphertext){
     var cipherPromise = new Promise(function(resolve,reject){
         try{
             //var address2 = new signal.SignalProtocolAddress(recipientId, deviceId);
@@ -69,12 +69,28 @@ decryptMessage = function(recipientId,deviceId,store,address,ciphertext){
             });
 */
             // Decrypt a normal message using an existing session
-            var sessionCipher = new signal.SessionCipher(store, address);
-            sessionCipher.decryptWhisperMessage(ciphertext,'binary').then(function(plaintext) {
+            var cipher = new signal.SessionCipher(store, address);
+            //sessionCipher.decryptWhisperMessage(ciphertext,'binary').then(function(plaintext) {
             //sessionCipher.decryptPreKeyWhisperMessage(ciphertext,'binary').then(function(plaintext) {
                 // handle plaintext ArrayBuffer
-                resolve(plaintext)
-            });
+
+            function bufferify (ab) {
+                var b = new Buffer(ab)
+                resolve(b)
+            }
+            // returns a promise of plaintext
+           
+                if (ciphertext.type == 3)
+                console.log('DECRYPT PRE KEY WHISPER MSG')
+                return cipher.decryptPreKeyWhisperMessage(ciphertext.body, 'binary')
+                .then(bufferify)
+                console.log('DECRYPT WHISPER MSG')
+                return cipher.decryptWhisperMessage(ciphertext.body, 'binary')
+                .then(bufferify)
+            
+
+            //resolve(plaintext)
+            //});
         }
         catch(e){reject(e)}
     })

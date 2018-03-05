@@ -6,17 +6,16 @@ const signal = require('signal-protocol')
 const auth = require('./authentication.js')
 const SignalProtocolStore = require('./SignalProtocolStore.js')
 
-
-createNewAccount = function(username,password){
+createNewAccount2 = function(username,password,registrationID){
     console.log('CREATING NEW ACCOUNT...\n')
     newAccountPromise = new Promise(function(resolve,reject){
         try{
-            var store  = new SignalProtocolStore.SignalProtocolStore()
+            //var store  = new SignalProtocolStore.SignalProtocolStore()
             auth.getTimestamp().then(function(tmstmp){
                 let authCred = auth.generateCredentials(username,password)
                 let signatureAddressObject = auth.generateSignatureAddress()
                 let headers = auth.generatePUTHeaders(authCred,tmstmp,signatureAddressObject.signature,signatureAddressObject.address)
-                let registrationID = generateRegistrationID(store)
+                //let registrationID = generateRegistrationID(store)
                 let signalingKey = generateSignalingKey()
                 let json = generateAccountJSON(signalingKey,registrationID,username)
                 let url = 'https://pillar-chat-service-auth.herokuapp.com'
@@ -25,8 +24,39 @@ createNewAccount = function(username,password){
                 let port = 80
                 let options = auth.generatePUTOptions(url,path,port,method,headers,json)
                 requestNewAccount(request,options).then(function(){
-                    console.log('NEW ACCOUNT CREATED: USERNAME = '+username+', PASSWORD = '+password+'\n')
-                    resolve(store)
+                    console.log('NEW ACCOUNT CREATED: USERNAME = '+username+', PASSWORD = '+password+', REGISTRATION ID = '+registrationID+'\n')
+                    resolve()
+                })
+            })
+        }
+        catch(e){reject(e)}
+    })
+    return(newAccountPromise)
+}
+
+module.exports.createNewAccount2 = createNewAccount2
+
+createNewAccount = function(username,password,store){
+    console.log('CREATING NEW ACCOUNT...\n')
+    newAccountPromise = new Promise(function(resolve,reject){
+        try{
+            auth.getTimestamp().then(function(tmstmp){
+                let authCred = auth.generateCredentials(username,password)
+                let signatureAddressObject = auth.generateSignatureAddress()
+                let headers = auth.generatePUTHeaders(authCred,tmstmp,signatureAddressObject.signature,signatureAddressObject.address)
+                generateIdentity(store)
+                .then(function(registrationID){
+                    let signalingKey = generateSignalingKey()
+                    let json = generateAccountJSON(signalingKey,registrationID,username)
+                    let url = 'https://pillar-chat-service-auth.herokuapp.com'
+                    let path = '/v1/accounts'
+                    let method = 'PUT'
+                    let port = 80
+                    let options = auth.generatePUTOptions(url,path,port,method,headers,json)
+                    requestNewAccount(request,options).then(function(){
+                        console.log('NEW ACCOUNT CREATED: USERNAME = '+username+', PASSWORD = '+password+', REGISTRATION ID = '+registrationID+'\n')
+                        resolve(registrationID)
+                    })
                 })
             })
         }
@@ -36,6 +66,17 @@ createNewAccount = function(username,password){
 }
 
 module.exports.createNewAccount = createNewAccount
+
+function generateIdentity(store) {
+    return Promise.all([
+      signal.KeyHelper.generateIdentityKeyPair(),
+      signal.KeyHelper.generateRegistrationId(),
+    ]).then(function(result) {
+      store.put('identityKey', result[0]);
+      store.put('registrationId', result[1]);
+      return(result[1])
+    });
+  }
 
 requestNewAccount = function(request,options){
     console.log('HTTP PUT REQUEST...')

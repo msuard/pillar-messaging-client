@@ -4,7 +4,7 @@
   "description": "\"A simple Node Js Client to connect to Pillar Messaging server\"",
   "main": "src/app.js",
   "scripts": {
-    "start": "node src/app.js",
+    "start": "node src/test_case.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Jude Ben",
