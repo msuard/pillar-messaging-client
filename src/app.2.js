@@ -105,40 +105,59 @@ return Promise.all([
     generateIdentity(aliceStore),
     generateIdentity(bobStore),
 ]).then(function(result) {
-    
+    console.log("STEP 1")
     ALICE_ADDRESS = new signal.SignalProtocolAddress(result[0], 1); 
     BOB_ADDRESS   = new signal.SignalProtocolAddress(result[1], 1);
 
     builderAlice = new signal.SessionBuilder(aliceStore, BOB_ADDRESS);
-    builderBob = new signal.SessionBuilder(bobStore, ALICE_ADDRESS);
+    //builderBob = new signal.SessionBuilder(bobStore, ALICE_ADDRESS);
    
 return Promise.all([
-    
     generatePreKeyBundle(aliceStore, alicePreKeyId, aliceSignedKeyId),
     generatePreKeyBundle(bobStore, bobPreKeyId, bobSignedKeyId),
 
 ]).then(function(result) {
-  
+  console.log("STEP 2")
   alicePreKeyBundle = result[0];
   bobPreKeyBundle = result[1];
 
 return Promise.all([
-
     builderAlice.processPreKey(bobPreKeyBundle),
-    builderBob.processPreKey(alicePreKeyBundle),
+    //builderBob.processPreKey(alicePreKeyBundle),
 
 ]).then(function() {
+  console.log("STEP 3")
     
     aliceSessionCipher = new signal.SessionCipher(aliceStore, BOB_ADDRESS);
     bobSessionCipher = new signal.SessionCipher(bobStore, ALICE_ADDRESS);
     msg1='The quick brown fox jumps over the lazy dog'
 
-    return bobSessionCipher.encrypt(msg1)
+    return aliceSessionCipher.encrypt(msg1)
   }).then(function(ciphertext){     
-
-    return decryptor(aliceSessionCipher)(ciphertext)
+    
+    console.log(ciphertext)
+    console.log("STEP 4")
+    
+    return decryptor(bobSessionCipher)(ciphertext)
   }).then(function(plaintext){       
+    
     console.log("Message 1: " + ab2str(plaintext))
-  })
+
+}).then(function(){
+
+    msg2='The quick brown dog jumps over the lazy fox'
+    
+    return bobSessionCipher.encrypt(msg2)
+}).then(function(ciphertext){
+    
+    console.log(ciphertext)
+    console.log("STEP 5")
+    
+    return decryptor(bobSessionCipher)(ciphertext)
+}).then(function(plaintext){
+    
+    console.log("Message 2: " + ab2str(plaintext))
+
+})
 })
 })
