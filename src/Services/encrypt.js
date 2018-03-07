@@ -2,6 +2,7 @@ const signal = require('signal-protocol')
 const ab2str = require('arraybuffer-to-string');
 const str2ab =require('string-to-arraybuffer')
 const base64 = require('base-64');
+const utf8 = require('utf8');
 
 encryptDecrypt = function(){
     var signalstream = require('signal-stream')
@@ -31,10 +32,10 @@ encryptDecrypt = function(){
 encryptMessage = function(plaintext,store,address){
     var cipherPromise = new Promise(function(resolve,reject){
         try{
-            var base64AB = str2ab(plaintext,'base64')
+            var base64Encoded = plaintext.toString('base64')
             var sessionCipher = new signal.SessionCipher(store, address);
 
-            sessionCipher.encrypt(plaintext).then(function(ciphertext) {
+            sessionCipher.encrypt(base64Encoded).then(function(ciphertext) {
                 // ciphertext -> { type: <Number>, body: <string> }
                 console.log('CIPHERTEXT')
                 console.log(ciphertext)

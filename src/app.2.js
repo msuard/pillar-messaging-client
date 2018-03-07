@@ -7,6 +7,7 @@ const encrypt = require('./Services/encrypt.js')
 const str2ab =require('string-to-arraybuffer')
 const ab2str = require('arraybuffer-to-string');
 let base64 = require('base-64');
+const utf8 = require('utf8');
 
 let username = "fcm-app-117"
 let password = "pwd"
@@ -110,50 +111,43 @@ return Promise.all([
     BOB_ADDRESS   = new signal.SignalProtocolAddress(result[1], 1);
 
     builderAlice = new signal.SessionBuilder(aliceStore, BOB_ADDRESS);
-    //builderBob = new signal.SessionBuilder(bobStore, ALICE_ADDRESS);
-   
+
+    console.log(bobStore.store)
 return Promise.all([
     generatePreKeyBundle(aliceStore, alicePreKeyId, aliceSignedKeyId),
     generatePreKeyBundle(bobStore, bobPreKeyId, bobSignedKeyId),
 
 ]).then(function(result) {
-  console.log("STEP 2")
+
   alicePreKeyBundle = result[0];
   bobPreKeyBundle = result[1];
 
 return Promise.all([
     builderAlice.processPreKey(bobPreKeyBundle),
-    //builderBob.processPreKey(alicePreKeyBundle),
 
 ]).then(function() {
-  console.log("STEP 3")
     
     aliceSessionCipher = new signal.SessionCipher(aliceStore, BOB_ADDRESS);
     bobSessionCipher = new signal.SessionCipher(bobStore, ALICE_ADDRESS);
+
     msg1='The quick brown fox jumps over the lazy dog'
 
     return aliceSessionCipher.encrypt(msg1)
   }).then(function(ciphertext){     
     
-    console.log(ciphertext)
-    console.log("STEP 4")
     
     return decryptor(bobSessionCipher)(ciphertext)
   }).then(function(plaintext){       
     
     console.log("Message 1: " + ab2str(plaintext))
-
 }).then(function(){
 
     msg2='The quick brown dog jumps over the lazy fox'
     
     return bobSessionCipher.encrypt(msg2)
 }).then(function(ciphertext){
-    
-    console.log(ciphertext)
-    console.log("STEP 5")
-    
-    return decryptor(bobSessionCipher)(ciphertext)
+  
+    return decryptor(aliceSessionCipher)(ciphertext)
 }).then(function(plaintext){
     
     console.log("Message 2: " + ab2str(plaintext))
