@@ -1,4 +1,3 @@
-
 let accounts = require('./Services/accounts.js')
 let gcm = require('./Services/gcm.js')
 let keys = require('./Services/keys.js')
@@ -71,11 +70,10 @@ function generateIdentity(store) {
     var bufferify = (ab) => {return new Buffer(ab)}
     // returns a promise of plaintext
     return function (ciphertext) {
-      base64body = base64.encode(ciphertext.body)
       if (ciphertext.type == 3)
         return cipher.decryptPreKeyWhisperMessage(ciphertext.body, 'binary')
         .then(bufferify)
-      return cipher.decryptWhisperMessage(base64body, 'binary')
+      return cipher.decryptWhisperMessage(ciphertext.body, 'binary')
         .then(bufferify)
     }
   }
@@ -110,48 +108,37 @@ return Promise.all([
     
     ALICE_ADDRESS = new signal.SignalProtocolAddress(result[0], 1); 
     BOB_ADDRESS   = new signal.SignalProtocolAddress(result[1], 1);
-    return generatePreKeyBundle(bobStore, bobPreKeyId, bobSignedKeyId); //GENERATE BOB PRE KEY BUNDLE TO SEND TO ALICE
 
-  }).then(function(genPreKeyBundleBob) {
-    
-  
-    bobPreKeyBundle = genPreKeyBundleBob
     builderAlice = new signal.SessionBuilder(aliceStore, BOB_ADDRESS);
-    
-    return builderAlice.processPreKey(bobPreKeyBundle) //REGISTER BOB's PREKEY BUNDLE INTO ALICE SESSION STORE
-  }).then(function () {
-
-    aliceSessionCipher = new signal.SessionCipher(aliceStore, BOB_ADDRESS);
-
-    return aliceStore.loadSession(BOB_ADDRESS.toString())
-  }).then(function(record) {
-
-    return bobStore.storeSession(str2ab(ALICE_ADDRESS.toString()), record)
-  }).then(function() {
-
-    msg1='The quick brown fox jumps over the lazy dog'
-    bobSessionCipher = new signal.SessionCipher(bobStore, ALICE_ADDRESS);
-
-    return aliceSessionCipher.encrypt(base64.encode(msg1))
-  }).then(function(ciphertext){     
+    builderBob = new signal.SessionBuilder(bobStore, ALICE_ADDRESS);
    
-    return decryptor(bobSessionCipher)(ciphertext)
-  }).then(function(plaintext){   
+return Promise.all([
     
-    console.log("Message 1: " + base64.decode(ab2str(plaintext)))
- 
-    msg2='The quick brown dog jumps over the lazy fox'
+    generatePreKeyBundle(aliceStore, alicePreKeyId, aliceSignedKeyId),
+    generatePreKeyBundle(bobStore, bobPreKeyId, bobSignedKeyId),
+
+]).then(function(result) {
+  
+  alicePreKeyBundle = result[0];
+  bobPreKeyBundle = result[1];
+
+return Promise.all([
+
+    builderAlice.processPreKey(bobPreKeyBundle),
+    builderBob.processPreKey(alicePreKeyBundle),
+
+]).then(function() {
     
-    return aliceSessionCipher.encrypt(msg2)
-  }).then(function (ciphertext) {
-    return decryptor(bobSessionCipher)(ciphertext)
-  }).then(function(plaintext) {
+    aliceSessionCipher = new signal.SessionCipher(aliceStore, BOB_ADDRESS);
+    bobSessionCipher = new signal.SessionCipher(bobStore, ALICE_ADDRESS);
+    msg1='The quick brown fox jumps over the lazy dog'
 
-    return aliceSessionCipher.encrypt(msg2)
-  }).then(function (ciphertext) {
-    return decryptor(bobSessionCipher)(ciphertext)
-  }).then(function(plaintext) {
+    return bobSessionCipher.encrypt(msg1)
+  }).then(function(ciphertext){     
 
-    console.log("Message 3: " + ab2str(plaintext))
+    return decryptor(aliceSessionCipher)(ciphertext)
+  }).then(function(plaintext){       
+    console.log("Message 1: " + ab2str(plaintext))
   })
-
+})
+})
