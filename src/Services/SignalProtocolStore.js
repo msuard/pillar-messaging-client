@@ -19,17 +19,13 @@ var SignalProtocolStore = (function(storeNb){
     },
   
     getIdentityKeyPair: function() {
-        console.log('GET IDENTITY KEY PAIR')
-        console.log(this.get('identityKey'))
+        
         let identityKey = this.get('identityKey')
       //return Promise.resolve({pubKey : str2ab(identityKey.pubKey), privKey : str2ab(identityKey.privKey)});
       return Promise.resolve({pubKey : identityKey.pubKey, privKey : identityKey.privKey});
     },
     getLocalRegistrationId: function() {
-      console.log('\n')
-      console.log(this.store)
-      console.log('\n')
-      console.log(this.get('identityKey'))
+      
       return Promise.resolve(this.get('registrationId'));
     },
     put: function(key,value) {
@@ -65,24 +61,19 @@ var SignalProtocolStore = (function(storeNb){
       if (trusted === undefined) {
         return Promise.resolve(true);
       }
-      console.log('IS TRUSTED IDENTITY')
       return Promise.resolve(identityKey.toString() === trusted.toString());
     },
     loadIdentityKey: function(identifier) {
-        console.log('LOAD IDENTITY KEY')
       if (identifier === null || identifier === undefined)
         throw new Error("Tried to get identity key for undefined/null key");
       return Promise.resolve(this.get('identityKey' + identifier));
     },
     saveIdentity: function(identifier, identityKey) {
-        console.log('SAVE IDENTITY')
-        console.log(identifier)
-        console.log(typeof(identifier))
+        
       if (identifier === null || identifier === undefined)
         throw new Error("Tried to put identity key for undefined/null key");
   
       var address = new signal.SignalProtocolAddress.fromString(identifier+'.1');
-        console.log(address)
       var existing = this.get('identityKey' + address.getName());
       this.put('identityKey' + address.getName(), identityKey)
   
@@ -96,7 +87,6 @@ var SignalProtocolStore = (function(storeNb){
   
     /* Returns a prekeypair object or undefined */
     loadPreKey: function(keyId) {
-        console.log('LOAD PREKEY')
       var res = this.get('25519KeypreKey' + keyId);
       if (res !== undefined) {
         res = { pubKey: res.pubKey, privKey: res.privKey };
@@ -112,7 +102,6 @@ var SignalProtocolStore = (function(storeNb){
   
     /* Returns a signed keypair object or undefined */
     loadSignedPreKey: function(keyId) {
-        console.log('LOAD SIGNED PREKEY')
       var res = this.get('25519KeysignedKey' + keyId);
       if (res !== undefined) {
         res = { pubKey: res.pubKey, privKey: res.privKey };
@@ -127,14 +116,10 @@ var SignalProtocolStore = (function(storeNb){
     },
   
     loadSession: function(identifier) {
-        console.log('LOAD SESSION')
-        console.log(this.store)
-        console.log(identifier)
-        console.log(this.get('session' + identifier))
+        
       return Promise.resolve(this.get('session' + identifier));
     },
     storeSession: function(identifier, record) {
-      console.log('STORE SESSION')
       return Promise.resolve(this.put('session' + identifier, record));
     },
     removeSession: function(identifier) {

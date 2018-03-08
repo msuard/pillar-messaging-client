@@ -25,15 +25,13 @@ appendObject = function(key,value,storeNb){
 }
 
 getJSON = function(storeNb){
-    console.log('GET STORE')
     var json = require('./store_'+storeNb+'.json');
     //var jsomn = JSON.parse(json);
     return(json)
 }
 
 getJSONKey = function(key,defaultValue,storeNb){
-    console.log('GET STORE KEY')
-    console.log(key)
+    
     try{
 
         var json = require('./store_'+storeNb+'.json');
@@ -46,11 +44,7 @@ getJSONKey = function(key,defaultValue,storeNb){
                 pubKey: str2ab(json[key].pubKey),
                 privKey: str2ab(json[key].privKey)
             }
-            console.log('PUBKEY')
-            console.log(jsonKeyAB.pubKey)
-            //console.log(new Uint8Array(jsonKeyAB.pubKey))
-            console.log('PRIVKEY')
-            console.log(jsonKeyAB.privKey)
+            
             return(jsonKeyAB)
         }
         else{
@@ -109,8 +103,7 @@ removeKey = function(key,storeNb){
             throw new Error("Tried to get value for undefined/null key");
         //if (key in this.store) {
             //return this.store[key];
-            console.log('GET KEY')
-            console.log(getJSONKey(key,defaultValue,storeNb))
+
             return getJSONKey(key,defaultValue,storeNb)
        // } else {
        //     return defaultValue;
@@ -125,7 +118,6 @@ removeKey = function(key,storeNb){
   
     isTrustedIdentity: function(identifier, identityKey, direction) {
 
-        console.log('IS TRUSTED IDENTITY')
       if (identifier === null || identifier === undefined) {
         throw new Error("tried to check identity key for undefined/null key");
       }
@@ -139,20 +131,16 @@ removeKey = function(key,storeNb){
       return Promise.resolve(identityKey.toString() === trusted.toString());
     },
     loadIdentityKey: function(identifier) {
-        console.log('LOAD IDENTITY KEY')
       if (identifier === null || identifier === undefined)
         throw new Error("Tried to get identity key for undefined/null key");
       return Promise.resolve(this.get('identityKey' + identifier));
     },
     saveIdentity: function(identifier, identityKey) {
-        console.log('SAVE IDENTITY')
-        console.log(identifier)
-        console.log(typeof(identifier))
+
       if (identifier === null || identifier === undefined)
         throw new Error("Tried to put identity key for undefined/null key");
   
       var address = new signal.SignalProtocolAddress.fromString(identifier+'.1');
-        console.log(address)
       var existing = this.get('identityKey' + address.getName());
       this.put('identityKey' + address.getName(), identityKey)
   
@@ -182,7 +170,6 @@ removeKey = function(key,storeNb){
   
     /* Returns a signed keypair object or undefined */
     loadSignedPreKey: function(keyId) {
-        console.log('LOAD SIGNED PREKEY')
       var res = this.get('25519KeysignedKey' + keyId);
       if (res !== undefined) {
         res = { pubKey: res.pubKey, privKey: res.privKey };
@@ -197,7 +184,6 @@ removeKey = function(key,storeNb){
     },
   
     loadSession: function(identifier) {
-        console.log('LOAD SESSION')
       return Promise.resolve(this.get('session' + identifier));
     },
     storeSession: function(identifier, record) {

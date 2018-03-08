@@ -5,16 +5,13 @@ const ab2str = require('arraybuffer-to-string');
 
 
 getJSON = function(storeNb){
-    console.log('GET STORE')
     var json = require('./store_'+storeNb+'.json');
     //var jsomn = JSON.parse(json);
-    console.log(json)
     return(json)
 }
 
 buildSession = function(preKeyBundle,store){
     var sessionPromise = new Promise(function(resolve,reject){
-        console.log(store)
         var recipientId = preKeyBundle.devices[0].registrationId.toString() //???
         var deviceId = preKeyBundle.devices[0].deviceId.toString() //
         //var json  = getJSON(storeNb)
@@ -31,7 +28,6 @@ buildSession = function(preKeyBundle,store){
         //console.log(store)
         // Instantiate a SessionBuilder for a remote recipientId + deviceId tuple.
         //console.log('SESSION BUILDER')
-        console.log()
         var sessionBuilder = new signal.SessionBuilder(store, address);
         
         // Process a prekey fetched from the server. Returns a promise that resolves
@@ -40,20 +36,16 @@ buildSession = function(preKeyBundle,store){
         //console.log('DEVICE')
         //console.log(preKeyBundle.devices[0])
         //console.log(ab2str(preKeyBundle.devices[0].preKey.publicKey,'hex'))
-        console.log('PROCESS PRE KEY')
         
         var promise = sessionBuilder.processPreKey(preKeyBundle.devices[0]);
         
         promise.then(function onsuccess() {
             // encrypt messages
-            console.log('SESSION BUILT SUCCESSFULLY')
             resolve({'address' : address, 'store' : store})
         });
         
         promise.catch(function onerror(error) {
             // handle identity key conflict
-            console.log('SESSIONS STORE ERROR')
-            console.log(error)
             reject(error)
         });
     })

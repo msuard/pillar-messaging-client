@@ -8,6 +8,7 @@ const str2ab =require('string-to-arraybuffer')
 const ab2str = require('arraybuffer-to-string');
 let base64 = require('base-64');
 const utf8 = require('utf8');
+const colors = require('colors')
 
 let username = "fcm-app-117"
 let password = "pwd"
@@ -81,9 +82,12 @@ function generateIdentity(store) {
 
 var ALICE_ADDRESS=''
 var BOB_ADDRESS=''
+var RAFA_ADDRESS=''
 
 var aliceStore = new SignalStore.SignalProtocolStore();
 var bobStore = new SignalStore.SignalProtocolStore();
+var rafaStore = new SignalStore.SignalProtocolStore();
+
 
 var bobPreKeyId = 1337;
 var bobSignedKeyId = 1;
@@ -91,67 +95,159 @@ var bobSignedKeyId = 1;
 var alicePreKeyId = 7331;
 var aliceSignedKeyId = 1;
 
+var rafaPreKeyId = 9634;
+var rafaSignedKeyId = 1;
+
 var alicePreKeyBundle
 var bobPreKeyBundle
+var bobPreKeyBundle2
+var rafaPreKeyBundle
 
-var aliceSessionCipher
-var bobSessionCipher
-var builderAlice
+var alice_bob
+var bob_alice
+
+var rafa_bob
+var bob_rafa
+
+var rafa_alice
+var alice_rafa
+
+var builderAliceBob
 var builderBob
-var sessionRecord
-var msg1
-var msg2
+var builderRafaAlice
+var builderRafaBob
+var builderBobRafa
+var msg
 
 return Promise.all([
     generateIdentity(aliceStore),
     generateIdentity(bobStore),
+    generateIdentity(rafaStore),
 ]).then(function(result) {
-    console.log("STEP 1")
+    
     ALICE_ADDRESS = new signal.SignalProtocolAddress(result[0], 1); 
     BOB_ADDRESS   = new signal.SignalProtocolAddress(result[1], 1);
+    RAFA_ADDRESS   = new signal.SignalProtocolAddress(result[2], 1);
 
-    builderAlice = new signal.SessionBuilder(aliceStore, BOB_ADDRESS);
+    builderAliceBob = new signal.SessionBuilder(aliceStore, BOB_ADDRESS);
+    builderRafaAlice = new signal.SessionBuilder(rafaStore, ALICE_ADDRESS);
+    builderBobRafa = new signal.SessionBuilder(bobStore, RAFA_ADDRESS);
 
-    console.log(bobStore.store)
+
 return Promise.all([
     generatePreKeyBundle(aliceStore, alicePreKeyId, aliceSignedKeyId),
     generatePreKeyBundle(bobStore, bobPreKeyId, bobSignedKeyId),
+    generatePreKeyBundle(rafaStore, rafaPreKeyId, rafaSignedKeyId),
 
 ]).then(function(result) {
 
   alicePreKeyBundle = result[0];
   bobPreKeyBundle = result[1];
+  rafaPreKeyBundle = result[2];
+  
+  alice_bob = new signal.SessionCipher(aliceStore, BOB_ADDRESS);
+  alice_rafa = new signal.SessionCipher(aliceStore, RAFA_ADDRESS);
+  
+  bob_alice = new signal.SessionCipher(bobStore, ALICE_ADDRESS);
+  bob_rafa = new signal.SessionCipher(bobStore, RAFA_ADDRESS);
+
+  rafa_alice = new signal.SessionCipher(rafaStore, ALICE_ADDRESS);
+  rafa_bob = new signal.SessionCipher(rafaStore, BOB_ADDRESS);
+  
 
 return Promise.all([
-    builderAlice.processPreKey(bobPreKeyBundle),
+    builderAliceBob.processPreKey(bobPreKeyBundle),
+    builderBobRafa.processPreKey(rafaPreKeyBundle),
+    builderRafaAlice.processPreKey(alicePreKeyBundle),
 
-]).then(function() {
-    
-    aliceSessionCipher = new signal.SessionCipher(aliceStore, BOB_ADDRESS);
-    bobSessionCipher = new signal.SessionCipher(bobStore, ALICE_ADDRESS);
+]).then(function(){ 
+    msg='Alice: But what about us?'
+    return alice_bob.encrypt(msg)
+  }).then(function(ciphertext){ return decryptor(bob_alice)(ciphertext)
+  }).then(function(plaintext){ console.log(ab2str(plaintext).bold.green+'\n')
 
-    msg1='The quick brown fox jumps over the lazy dog'
-
-    return aliceSessionCipher.encrypt(msg1)
-  }).then(function(ciphertext){     
-    
-    
-    return decryptor(bobSessionCipher)(ciphertext)
-  }).then(function(plaintext){       
-    
-    console.log("Message 1: " + ab2str(plaintext))
 }).then(function(){
+    msg='Bob: We’ll always have Paris. [...]'
+    return bob_alice.encrypt(msg)
+}).then(function(ciphertext){ return decryptor(alice_bob)(ciphertext)
+}).then(function(plaintext){ console.log(ab2str(plaintext).bold.red+'\n')
 
-    msg2='The quick brown dog jumps over the lazy fox'
-    
-    return bobSessionCipher.encrypt(msg2)
-}).then(function(ciphertext){
-  
-    return decryptor(aliceSessionCipher)(ciphertext)
-}).then(function(plaintext){
-    
-    console.log("Message 2: " + ab2str(plaintext))
+}).then(function(){
+  msg='Bob: We’ll always have Paris. [...]'
+  return bob_alice.encrypt(msg)
+}).then(function(ciphertext){ return decryptor(alice_bob)(ciphertext)
+}).then(function(plaintext){ console.log(ab2str(plaintext).bold.red+'\n')
+
+}).then(function(){ 
+  msg='Alice: When I said I would never leave you.'
+  return alice_bob.encrypt(msg)
+}).then(function(ciphertext){ return decryptor(bob_alice)(ciphertext)
+}).then(function(plaintext){ console.log(ab2str(plaintext).bold.green+'\n')
+})
+
+.then(function(){
+  msg='Alice: When I said I would never leave you..'
+  return alice_bob.encrypt(msg)
+}).then(function(ciphertext){ return decryptor(bob_alice)(ciphertext)
+}).then(function(plaintext){ console.log(ab2str(plaintext).bold.green+'\n')
+
+}).then(function(){
+  msg='Alice: When I said I would never leave you...'
+  return alice_bob.encrypt(msg)
+}).then(function(ciphertext){ return decryptor(bob_alice)(ciphertext)
+}).then(function(plaintext){ console.log(ab2str(plaintext).bold.green+'\n')
+
+}).then(function(){
+  msg='Bob: We’ll always have Paris. [...]'
+  return bob_alice.encrypt(msg)
+}).then(function(ciphertext){ return decryptor(alice_bob)(ciphertext)
+}).then(function(plaintext){ console.log(ab2str(plaintext).bold.red+'\n')
+
+}).then(function(){
+  msg='Rafa: Hey, Alice!'
+  return rafa_alice.encrypt(msg)
+}).then(function(ciphertext){ return decryptor(alice_rafa)(ciphertext)
+}).then(function(plaintext){ console.log(ab2str(plaintext).bold.green+'\n')
+
+
+}).then(function(){
+  msg='Bob: Hi, Rafa, whats up?!!'
+  return bob_rafa.encrypt(msg)
+}).then(function(ciphertext){ return decryptor(rafa_bob)(ciphertext)
+}).then(function(plaintext){ console.log(ab2str(plaintext).bold.blue+'\n')
+
+
+}).then(function(){
+  msg='Alice: Rafa! How are you doing?'
+  return alice_rafa.encrypt(msg)
+}).then(function(ciphertext){ return decryptor(rafa_alice)(ciphertext)
+}).then(function(plaintext){ console.log(ab2str(plaintext).bold.blue+'\n')
+
+}).then(function(){
+  msg='Bob: We’ll always have Paris. [...]'
+  return bob_alice.encrypt(msg)
+}).then(function(ciphertext){ return decryptor(alice_bob)(ciphertext)
+}).then(function(plaintext){ console.log(ab2str(plaintext).bold.red+'\n')
+
+}).then(function(){
+  msg='Bob: We’ll always have Paris. [...]'
+  return bob_alice.encrypt(msg)
+}).then(function(ciphertext){ return decryptor(alice_bob)(ciphertext)
+}).then(function(plaintext){ console.log(ab2str(plaintext).bold.red+'\n')
+
+}).then(function(){
+  msg='Bob: We’ll always have Paris. [...]'
+  return bob_alice.encrypt(msg)
+}).then(function(ciphertext){ return decryptor(alice_bob)(ciphertext)
+}).then(function(plaintext){ console.log(ab2str(plaintext).bold.red+'\n')
 
 })
+
+
+
+
+
+
+
 })
 })
